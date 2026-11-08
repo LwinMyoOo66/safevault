@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeVault - P2P Marketplace</title>
+  
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-white min-h-screen flex flex-col text-slate-800 antialiased">
+
+<!-- ==================================================== -->
+<!-- AUTHENTICATION OVERLAY: LOGIN & SIGN UP              -->
+<!-- ==================================================== -->
+<div id="auth-screen" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[94vh] overflow-y-auto">
+    
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white text-2xl mx-auto shadow-lg shadow-orange-500/20 mb-3">
+        <i class="fa-solid fa-shapes"></i>
+      </div>
+      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Safe<span class="text-orange-500">Vault</span></h2>
+      <p class="text-xs text-slate-400 mt-1">TiDB Serverless MySQL Database Connected</p>
+    </div>
+
+    <!-- TABS: CREATE ACCOUNT / SIGN IN -->
+    <div class="flex bg-slate-100 p-1 rounded-2xl mb-6 text-xs font-bold">
+      <button id="auth-tab-signup" onclick="setAuthMode('signup')" class="flex-1 py-2.5 rounded-xl bg-white text-slate-900 shadow-sm transition">
+        Create Account
+      </button>
+      <button id="auth-tab-login" onclick="setAuthMode('login')" class="flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition">
+        Sign In
+      </button>
+    </div>
+
+    <!-- 1. SIGN UP FORM -->
+    <form id="form-signup" autocomplete="off" onsubmit="handleSignUpSubmit(event)" class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Full Name / Store Name</label>
+        <input id="signup-name" type="text" required class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+        <input id="signup-email" type="email" required class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Select Role</label>
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <label class="border-2 p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1 cursor-pointer border-amber-500 bg-amber-50/40">
+            <input type="radio" name="signup-role" value="buyer" checked class="text-amber-500" />
+            <div class="font-bold text-slate-900">Buyer</div>
+          </label>
+          <label class="border-2 p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1 cursor-pointer border-slate-200 hover:bg-slate-50">
+            <input type="radio" name="signup-role" value="seller" class="text-amber-500" />
+            <div class="font-bold text-slate-900">Seller</div>
+          </label>
+          <label class="border-2 p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1 cursor-pointer border-slate-200 hover:bg-slate-50">
+            <input type="radio" name="signup-role" value="admin" class="text-amber-500" />
+            <div class="font-bold text-slate-900">Admin</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+          <div class="relative">
+            <input id="signup-password" type="password" required minlength="6" class="w-full pl-3.5 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition" />
+            <button type="button" onclick="togglePasswordVisibility('signup-password', this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 transition" tabindex="-1">
+              <i class="fa-solid fa-eye text-xs"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Confirm Password</label>
+          <div class="relative">
+            <input id="signup-confirm-password" type="password" required minlength="6" class="w-full pl-3.5 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition" />
+            <button type="button" onclick="togglePasswordVisibility('signup-confirm-password', this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 transition" tabindex="-1">
+              <i class="fa-solid fa-eye text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-full text-xs transition shadow-lg shadow-slate-900/10 mt-2">
+        Create My Account
+      </button>
+    </form>
+
+    <!-- 2. LOGIN FORM -->
+    <form id="form-login" autocomplete="off" onsubmit="handleLoginSubmit(event)" class="space-y-4 hidden">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+        <input id="login-email" type="email" required class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+        <div class="relative">
+          <input id="login-password" type="password" required class="w-full pl-3.5 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition" />
+          <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 transition" tabindex="-1">
+            <i class="fa-solid fa-eye text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-full text-xs transition shadow-lg shadow-slate-900/10">
+        Sign In
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<!-- ==================================================== -->
+<!-- TOP NAVBAR                                           -->
+<!-- ==================================================== -->
+<header class="bg-white border-b border-slate-100 sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
+    
+    <!-- Logo -->
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white text-xl font-black shadow-md shadow-orange-500/20">
+        <i class="fa-solid fa-shapes"></i>
+      </div>
+      <div>
+        <span class="text-xl font-black tracking-tight text-slate-900">Safe<span class="text-orange-500">Vault</span></span>
+        <span id="role-badge" class="hidden sm:inline-block text-[10px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ml-1">Buyer</span>
+      </div>
+    </div>
+
+    <!-- Center Navigation Links -->
+    <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
+      <button onclick="switchTab('marketplace')" id="tab-btn-marketplace" class="text-slate-900 border-b-2 border-orange-500 pb-1 flex items-center gap-2">
+        Marketplace
+      </button>
+      
+      <button onclick="switchTab('orders')" id="tab-btn-orders" class="text-slate-500 hover:text-slate-900 transition pb-1 flex items-center gap-2 relative">
+        <span id="orders-tab-label">Order History</span>
+        <span id="active-orders-pill" class="bg-orange-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+      </button>
+
+      <button onclick="switchTab('admin-panel')" id="tab-btn-admin" class="hidden text-slate-500 hover:text-slate-900 transition pb-1 flex items-center gap-2">
+        <i class="fa-solid fa-crown text-amber-500"></i> Manage Seller Ranks
+      </button>
+
+      <button onclick="switchTab('ledger')" id="tab-btn-ledger" class="text-slate-500 hover:text-slate-900 transition pb-1 flex items-center gap-2">
+        Transaction
+      </button>
+    </nav>
+
+    <!-- Right Controls: Wallet & User Profile -->
+    <div class="flex items-center gap-3">
+      <div id="user-wallet-card" class="bg-slate-50 hover:bg-slate-100 border border-slate-200/80 px-3.5 py-1.5 rounded-full text-right transition cursor-pointer flex items-center gap-2"></div>
+
+      <div class="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+        <div id="user-avatar-badge" class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="hidden sm:block text-left text-xs">
+          <div id="current-user-name" class="text-slate-900 font-bold truncate max-w-[120px]">No User</div>
+          <div id="current-user-rank-display" class="text-[10px] text-slate-400"></div>
+        </div>
+        <button onclick="performLogout()" class="text-slate-400 hover:text-rose-500 p-1.5 text-xs transition" title="Log Out">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<!-- MAIN CONTENT WRAPPER -->
+<main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
+
+  <!-- TAB 1: MARKETPLACE CATALOG -->
+  <div id="tab-marketplace" class="space-y-8">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-5">
+      <div>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Verified Marketplace</h1>
+        <p class="text-xs text-slate-400 mt-1">Direct peer-to-peer verified seller stock (1% Escrow Protected)</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="category-pills" class="flex flex-wrap gap-2"></div>
+        <button id="btn-seller-post-market" onclick="openSellModal()" class="hidden bg-slate-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-full transition shadow-sm">
+          + List Item
+        </button>
+      </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div id="items-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-10"></div>
+  </div>
+
+  <!-- TAB 2: ORDER HISTORY / ACTIVE ORDERS -->
+  <div id="tab-orders" class="space-y-6 hidden">
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
+      <div>
+        <h2 id="orders-heading" class="text-2xl font-black text-slate-900">Order History</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Track and manage recent purchases.</p>
+      </div>
+
+      <button id="btn-seller-post" onclick="openSellModal()" class="hidden bg-slate-900 hover:bg-black text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-sm self-start">
+        + List New Item
+      </button>
+    </div>
+
+    <div id="orders-list" class="space-y-4"></div>
+  </div>
+
+  <!-- TAB 3: ADMIN PANEL - SELLER RANK MANAGEMENT -->
+  <div id="tab-admin-panel" class="space-y-6 hidden">
+    <div class="border-b border-slate-100 pb-4">
+      <h2 class="text-2xl font-black text-slate-900">Seller Rank Management (Admin Only)</h2>
+      <p class="text-xs text-slate-400 mt-0.5">Assign official merchant ranks: Bronze, Silver, Gold, or Platinum.</p>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-400 uppercase font-bold tracking-wider border-b border-slate-200">
+          <tr>
+            <th class="p-4">Seller Name</th>
+            <th class="p-4">Email</th>
+            <th class="p-4">Current Rank</th>
+            <th class="p-4">Action (Assign New Rank)</th>
+          </tr>
+        </thead>
+        <tbody id="admin-seller-rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 4: TRANSACTION LEDGER -->
+  <div id="tab-ledger" class="space-y-6 hidden">
+    <div class="border-b border-slate-100 pb-4">
+      <h2 class="text-2xl font-black text-slate-900">Transaction</h2>
+      <p class="text-xs text-slate-400">Financial records of wallet top-ups, escrow holding, and 1% fee distributions.</p>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-400 uppercase font-bold tracking-wider">
+          <tr>
+            <th class="p-4">Tx ID</th>
+            <th class="p-4">Reference</th>
+            <th class="p-4">Method</th>
+            <th class="p-4">Sender</th>
+            <th class="p-4">Receiver</th>
+            <th class="p-4">Amount</th>
+            <th class="p-4">Time</th>
+          </tr>
+        </thead>
+        <tbody id="ledger-rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- CHECKOUT MODAL -->
+<div id="modal-payment" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
+    
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div>
+        <h3 class="font-extrabold text-base text-slate-900">Confirm Order & Shipping</h3>
+        <p class="text-[11px] text-slate-400">Funds held securely in Admin Escrow until delivery is confirmed</p>
+      </div>
+      <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <div id="checkout-item-title" class="text-xs font-bold text-slate-900 line-clamp-1">Product Title</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Seller: <span id="checkout-item-seller" class="font-bold text-slate-700"></span> | Stock: <span id="checkout-stock-avail" class="font-bold text-emerald-600">0</span></div>
+        </div>
+        <div id="checkout-total-price" class="text-base font-black text-slate-900">฿0.00</div>
+      </div>
+
+      <div class="flex items-center justify-between border-t border-slate-200 pt-2.5">
+        <span class="text-xs font-bold text-slate-700">Quantity:</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="adjustCheckoutQty(-1)" class="w-7 h-7 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold hover:bg-slate-100">-</button>
+          <input id="checkout-item-qty" type="number" value="1" min="1" oninput="updateCheckoutCalculations()" class="w-14 text-center border border-slate-200 rounded-lg py-1 text-xs font-bold" />
+          <button type="button" onclick="adjustCheckoutQty(1)" class="w-7 h-7 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold hover:bg-slate-100">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-2.5 border-t border-slate-100 pt-3">
+      <h4 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+        <i class="fa-solid fa-location-dot text-orange-500"></i> Shipping Address
+      </h4>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Recipient Full Name *</label>
+          <input id="ship-name" type="text" required class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Contact Phone Number *</label>
+          <input id="ship-phone" type="text" required class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Delivery Address & Postal Code *</label>
+        <textarea id="ship-address" rows="2" required class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500"></textarea>
+      </div>
+    </div>
+
+    <div class="space-y-2 border-t border-slate-100 pt-3">
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-900">Account Balance</div>
+            <div class="text-[11px] text-slate-400">Available: <span id="checkout-buyer-balance" class="font-bold text-emerald-600">฿0.00</span></div>
+          </div>
+        </div>
+
+        <button onclick="openTopUpModal()" type="button" class="text-xs bg-slate-900 hover:bg-black text-white font-bold px-3 py-1.5 rounded-full shadow-sm transition">
+          + Top Up
+        </button>
+      </div>
+
+      <div id="insufficient-alert" class="hidden text-[11px] text-rose-600 font-semibold bg-rose-50 border border-rose-200 p-2.5 rounded-xl flex items-center gap-1.5">
+        <i class="fa-solid fa-triangle-exclamation"></i> Insufficient balance. Please top up your wallet.
+      </div>
+    </div>
+
+    <input type="hidden" id="checkout-item-id" />
+
+    <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+      <button onclick="closePaymentModal()" class="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800">Cancel</button>
+      <button id="btn-pay-action" onclick="executePayment()" class="px-8 py-3 bg-slate-900 hover:bg-black text-white rounded-full text-xs font-bold transition shadow-lg shadow-slate-900/10">
+        Confirm & Pay
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOP UP WALLET MODAL -->
+<div id="modal-topup" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div>
+        <h3 class="font-black text-base text-slate-900">Top Up Wallet</h3>
+        <p class="text-[11px] text-slate-400">Add funds with Card or TrueMoney</p>
+      </div>
+      <button onclick="closeTopUpModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="bg-slate-50 rounded-2xl p-3 flex justify-between items-center text-xs">
+      <span class="text-slate-500 font-semibold">Current Balance:</span>
+      <span id="topup-current-balance" class="font-black text-slate-900 text-sm">฿0.00</span>
+    </div>
+
+    <div class="space-y-2">
+      <label class="block text-xs font-bold text-slate-700">Top Up Amount (THB)</label>
+      <input id="topup-amount" type="number" min="100" step="100" value="5000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none" />
+      
+      <div class="flex gap-2 pt-1">
+        <button onclick="setTopUpAmount(1000)" type="button" class="flex-1 py-1.5 text-xs bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200">+฿1K</button>
+        <button onclick="setTopUpAmount(5000)" type="button" class="flex-1 py-1.5 text-xs bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200">+฿5K</button>
+        <button onclick="setTopUpAmount(10000)" type="button" class="flex-1 py-1.5 text-xs bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200">+฿10K</button>
+      </div>
+    </div>
+
+    <div class="space-y-2 pt-1">
+      <label class="block text-xs font-bold text-slate-700">Payment Option</label>
+      
+      <label class="flex items-center justify-between p-3 border-2 border-amber-500 bg-amber-50/20 rounded-2xl cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="radio" name="topup_method" value="Credit/Debit Card" checked class="text-amber-500" />
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs"><i class="fa-solid fa-credit-card"></i></span>
+            <div class="text-xs font-bold text-slate-900">Credit / Debit Card</div>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Instant</span>
+      </label>
+
+      <label class="flex items-center justify-between p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50">
+        <div class="flex items-center gap-3">
+          <input type="radio" name="topup_method" value="TrueMoney Wallet" class="text-amber-500" />
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-black">TM</span>
+            <div class="text-xs font-bold text-slate-900">TrueMoney Wallet</div>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">Fast</span>
+      </label>
+    </div>
+
+    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+      <button onclick="closeTopUpModal()" class="px-4 py-2 text-xs font-bold text-slate-500">Cancel</button>
+      <button onclick="executeTopUp()" class="px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-full text-xs font-bold transition shadow-sm">
+        Confirm Top Up
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SELL NEW ITEM -->
+<div id="modal-sell" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div>
+        <h3 class="font-extrabold text-base text-slate-900">List New Stock</h3>
+        <p class="text-[11px] text-slate-400">Add an item to the verified store</p>
+      </div>
+      <button onclick="closeSellModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Item Title</label>
+        <input id="post-title" type="text" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Select Category</label>
+        <select id="post-category" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500"></select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Selling Price (฿) *</label>
+          <input id="post-price" type="number" step="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Original Price (฿)</label>
+          <input id="post-original-price" type="number" step="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Stock Count</label>
+          <input id="post-stock" type="number" step="1" min="1" value="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Image URL</label>
+          <input id="post-img" type="text" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+      <button onclick="closeSellModal()" class="px-4 py-2 text-xs font-bold text-slate-500">Cancel</button>
+      <button onclick="submitItem()" class="px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-full text-xs font-bold shadow-sm">Publish Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT EXISTING ITEM -->
+<div id="modal-edit-item" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div>
+        <h3 class="font-extrabold text-base text-slate-900">Edit Listed Item</h3>
+        <p class="text-[11px] text-slate-400">Update price, stock, or remove listing</p>
+      </div>
+      <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <input type="hidden" id="edit-item-id" />
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Item Title</label>
+        <input id="edit-title" type="text" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Selling Price (฿) *</label>
+          <input id="edit-price" type="number" step="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Original Price (฿)</label>
+          <input id="edit-original-price" type="number" step="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Stock Quantity</label>
+          <input id="edit-stock" type="number" step="1" min="0" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Image URL</label>
+          <input id="edit-img" type="text" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-amber-500" />
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+      <button type="button" onclick="deleteCurrentEditedItem()" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-full text-xs font-bold transition">
+        <i class="fa-solid fa-trash mr-1"></i> Delete Item
+      </button>
+
+      <div class="flex gap-2">
+        <button onclick="closeEditModal()" class="px-4 py-2 text-xs font-bold text-slate-500">Cancel</button>
+        <button onclick="saveEditedItem()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-bold shadow-sm">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SHIP ITEM -->
+<div id="modal-ship" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+    <h3 class="font-extrabold text-base text-slate-900">Ship Item & Add Tracking</h3>
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Courier</label>
+        <select id="ship-courier" class="w-full border p-2.5 rounded-xl">
+          <option>Flash Express</option>
+          <option>Express Post (EMS)</option>
+          <option>Kerry Express / KEX</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Tracking Number</label>
+        <input id="ship-tracking" type="text" class="w-full border p-2.5 rounded-xl" />
+      </div>
+    </div>
+    <input type="hidden" id="ship-order-id" />
+    <div class="flex justify-end gap-2">
+      <button onclick="closeShipModal()" class="px-4 py-2 text-xs font-bold text-slate-500">Cancel</button>
+      <button onclick="confirmShipment()" class="px-5 py-2.5 bg-slate-900 text-white rounded-full text-xs font-bold">Mark Shipped</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 transform translate-y-24 opacity-0 transition duration-300 z-50">
+  <i id="toast-icon" class="fa-solid fa-circle-check text-amber-400"></i>
+  <span id="toast-msg" class="text-xs font-bold">Notification</span>
+</div>
+
+<!-- Load application JavaScript -->
+<script src="app.js"></script>
+</body>
+</html>
